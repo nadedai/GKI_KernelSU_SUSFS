@@ -539,7 +539,11 @@ jobs:
           variant_input="${{ inputs.ksu_variant }}"
 
           case "$variant_input" in
-            "Official"|"BakaSU")
+            "Official")
+              # 固定 v3.3.1（32680 / UAPI 5），与官方管理器严格对齐；main 已是 UAPI 6
+              BRANCH="-s v3.3.1"
+              ;;
+            "BakaSU")
               BRANCH="-s main"
               ;;
             "SukiSU")
