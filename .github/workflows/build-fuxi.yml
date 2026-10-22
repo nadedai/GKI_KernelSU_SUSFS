@@ -1,0 +1,81 @@
+# 小米13 (fuxi) 专用：android13-5.15.194 + Droidspaces 容器支持
+# 用法：fork https://github.com/zzh20188/GKI_KernelSU_SUSFS（dev 分支）
+#       把本文件放到 fork 的 .github/workflows/ 下，然后 Actions → 本工作流 → Run workflow
+# 本文件只负责“选参数”，真正的编译逻辑在仓库自带的 build.yml 里（它是 workflow_call 类型）。
+
+name: fuxi GKI 5.15.194 + Droidspaces
+
+permissions:
+  contents: write
+  actions: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      sub_level:
+        description: "子版本号（194 = 5.15.194，和你 stock 的 uname 对齐）"
+        required: true
+        default: "194"
+      os_patch_level:
+        description: "子版本对应的安全补丁级别（194→2025-12，178→2025-03）"
+        required: true
+        default: "2025-12"
+      version_tag:
+        description: "版本后缀：默认复刻你 stock 的 banner，让 uname 一字不差"
+        required: true
+        default: "-android13-8-00019-gf4321180a397-ab15212794"
+      droidspaces:
+        description: "Droidspaces 补丁槽位（678 优先；开机异常换 123 / 345）"
+        type: choice
+        options:
+          - "678"
+          - "123"
+          - "345"
+          - "off"
+        default: "678"
+      ntsync:
+        description: "NTsync（Wine/Proton 需要的同步原语，首次验证建议关）"
+        type: boolean
+        default: false
+      ksu_variant:
+        description: "KernelSU 变体（Official 对应你现有的 me.weishu.kernelsu 管理器）"
+        type: choice
+        options:
+          - "Official"
+          - "SukiSU"
+          - "BakaSU"
+        default: "Official"
+      enable_susfs:
+        description: "集成 SUSFS（与 Droidspaces 有冲突，首刷建议关）"
+        type: boolean
+        default: false
+      cve_patch:
+        description: "CVE-2026-43499 rtmutex 修复链（GhostLock）"
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      android_version: "android13"
+      kernel_version: "5.15"
+      sub_level: ${{ inputs.sub_level }}
+      os_patch_level: ${{ inputs.os_patch_level }}
+      ksu_variant: ${{ inputs.ksu_variant }}
+      # enable_susfs=false 时走“禁用SUSFS”，KSU 本身仍然保留
+      ksu_mode: ${{ inputs.enable_susfs && '关闭' || '禁用SUSFS' }}
+      enable_susfs: ${{ inputs.enable_susfs }}
+      version: ${{ inputs.version_tag }}
+      build_time: "N"
+      use_zram: false
+      use_bbg: false
+      use_kpm: "disabled (关闭)"
+      use_rekernel: false
+      use_nomount: false
+      use_networking: false
+      cve_2026_43499_patch: ${{ inputs.cve_patch }}
+      droidspaces: ${{ inputs.droidspaces }}
+      droidspaces_ntsync: ${{ inputs.ntsync }}
+      artifact_upload_mode: "上传全部"
